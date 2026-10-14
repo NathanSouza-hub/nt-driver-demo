@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Demo interativa do NT Driver, app de controle financeiro para motoristas de aplicativo."><title>NT Driver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: portfolio intro on top, the app itself in a framed "device" with sidebar + main, highlights below.
+   Single dark theme on purpose: it is the product's own palette (navy + route blue). */
+:root {
+  color-scheme: dark;
+  --ground: #070b14;
+  --app-bg: #0d1322;
+  --panel: #141c2e;
+  --panel-2: #1b2540;
+  --line: rgba(148, 170, 210, 0.15);
+  --text: #e8edf7;
+  --muted: #94a3bf;
+  --route: #4cc3ff;
+  --blue: #3b82f6;
+  --blue-deep: #2563eb;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f5a524;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 14px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: clamp(16px, 4vw, 48px);
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 48px 64px; display: grid; gap: 40px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Intro ---------- */
+.intro { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.brand svg { width: 52px; height: 52px; flex-shrink: 0; }
+.intro h1 { font-family: var(--display); font-weight: 800; font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1; margin: 0; letter-spacing: -0.02em; }
+.intro h1 span { color: var(--route); }
+.pitch { font-size: 1.12rem; color: #c6d0e3; max-width: 58ch; margin: 14px 0 0; text-wrap: pretty; }
+.facts { display: grid; gap: 10px; border-left: 1px solid var(--line); padding-left: 24px; }
+.facts div { display: grid; gap: 2px; }
+.stack { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--mono); font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: #c6d0e3; background: rgba(76, 195, 255, 0.06); }
+
+/* ---------- App frame ---------- */
+.frame { background: var(--app-bg); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: 720px; box-shadow: 0 30px 80px -40px rgba(37, 99, 235, 0.45); }
+.side { background: #0a1130; border-right: 1px solid #1f2a5c; padding: 20px 14px; display: flex; flex-direction: column; gap: 22px; }
+.side-brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 1.1rem; padding-inline: 6px; }
+.side-brand svg { width: 30px; height: 30px; }
+.nav { display: grid; gap: 4px; }
+.nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; border: 0; background: transparent; color: #c3cbe6; font-weight: 500; }
+.nav button:hover { background: #141d4a; }
+.nav button[aria-current="page"] { background: #1a2456; color: #fff; box-shadow: inset 3px 0 0 var(--route); }
+.nav svg { width: 18px; height: 18px; flex-shrink: 0; }
+.side-foot { margin-top: auto; display: grid; gap: 8px; padding-inline: 6px; }
+.reset { border: 1px solid #26326b; background: transparent; color: #c3cbe6; border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+.reset:hover { background: #141d4a; }
+
+.main { padding: 22px clamp(16px, 2.4vw, 30px) 30px; display: grid; gap: 20px; align-content: start; min-width: 0; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.topbar h2 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; margin: 0; letter-spacing: -0.01em; }
+.topbar-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pill { font-size: 12.5px; padding: 5px 11px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+.pill.sample { color: var(--amber); border-color: rgba(245, 165, 36, 0.35); background: rgba(245, 165, 36, 0.08); }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+.card h3 { margin: 0 0 14px; font-size: 1.02rem; font-weight: 700; }
+
+/* Dashboard */
+.reminder { display: flex; gap: 14px; align-items: flex-start; background: rgba(245, 165, 36, 0.08); border: 1px solid rgba(245, 165, 36, 0.3); border-radius: var(--radius); padding: 14px 16px; }
+.reminder-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--amber); color: #1a1205; font-weight: 800; display: grid; place-items: center; flex-shrink: 0; }
+.reminder p { margin: 2px 0 0; color: #d9dfec; }
+.reminder ul { margin: 6px 0 0; padding-left: 18px; color: #d9dfec; }
+.totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.total { border-radius: var(--radius); padding: 16px 18px; color: #fff; display: grid; gap: 4px; }
+.total span { color: rgba(255, 255, 255, 0.84); font-size: 14px; }
+.total strong { font-size: 1.55rem; font-weight: 700; }
+.total.in { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.total.out { background: linear-gradient(135deg, #dc2626, #ef4444); }
+.total.bal { background: linear-gradient(135deg, var(--blue-deep), var(--blue)); }
+.dash-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 14px; }
+.goal-box { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.donut { width: 168px; height: 168px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.donut div { width: 118px; height: 118px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; align-content: center; text-align: center; line-height: 1.1; }
+.donut strong { font-size: 1.8rem; font-family: var(--display); }
+.donut small { color: var(--muted); font-size: 12px; }
+.kv { display: grid; gap: 10px; flex: 1; min-width: 170px; }
+.kv div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+.kv span { color: var(--muted); }
+.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+.mini { background: var(--panel-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; border-left: 3px solid var(--green); }
+.mini.neg { border-left-color: var(--red); }
+.mini span { color: var(--muted); font-size: 12.5px; }
+.mini strong { font-size: 15px; }
+.chart-wrap { overflow-x: auto; }
+.chart-wrap svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* Metas */
+.explain { display: flex; gap: 12px; align-items: flex-start; background: rgba(76, 195, 255, 0.07); border: 1px solid rgba(76, 195, 255, 0.28); border-radius: var(--radius); padding: 14px 16px; }
+.explain svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--route); margin-top: 1px; }
+.explain p { margin: 0; color: #d4dcec; max-width: 80ch; }
+.goal-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.goal-strip > div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.goal-strip strong { font-size: 1.2rem; }
+.goal-strip .hl { border-color: rgba(76, 195, 255, 0.45); }
+.goal-strip .hl strong { color: var(--route); }
+.monthly-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.monthly-form input { width: 130px; }
+.field { background: #0b1120; border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; }
+.btn { border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 600; background: linear-gradient(135deg, var(--blue-deep), var(--blue)); color: #fff; }
+.btn:hover { filter: brightness(1.08); }
+.days { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; }
+.day { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; border-top: 3px solid var(--line); align-content: start; }
+.day.hit { border-top-color: var(--green); }
+.day.miss { border-top-color: var(--red); }
+.day.off { border-top-color: var(--amber); background: #161a2a; }
+.day.today { box-shadow: 0 0 0 1px var(--route); }
+.day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.day-head b { font-family: var(--display); font-size: 1.3rem; }
+.day-head small { color: var(--muted); margin-left: 4px; }
+.status { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.hit .status { background: rgba(34, 197, 94, 0.15); color: #6ee7a0; }
+.miss .status { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+.off .status { background: rgba(245, 165, 36, 0.15); color: #fcd27a; }
+.open .status { background: var(--panel-2); color: var(--muted); }
+.day-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.day-vals span { display: block; color: var(--muted); font-size: 11.5px; }
+.day-vals strong { font-size: 14px; border-radius: 4px; transition: background-color 0.9s ease; }
+.day-vals strong.flash { background: rgba(76, 195, 255, 0.32); transition: none; }
+.day-actions { display: grid; gap: 6px; }
+.day-actions button { font-size: 12.5px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: #d4dcec; }
+.day-actions button:hover { border-color: rgba(76, 195, 255, 0.5); }
+.day-actions button.on { background: rgba(245, 165, 36, 0.12); border-color: rgba(245, 165, 36, 0.4); color: #fcd27a; }
+
+/* Registrar */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.form-grid label { display: grid; gap: 6px; font-size: 13.5px; color: #c6d0e3; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+.msg { font-size: 14px; }
+.msg.ok { color: #6ee7a0; }
+.msg.err { color: #fca5a5; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.r, th.r { text-align: right; }
+.tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); }
+.tag.paid { background: rgba(34, 197, 94, 0.15); color: #6ee7a0; }
+.tag.due { background: rgba(245, 165, 36, 0.15); color: #fcd27a; }
+td button { font-size: 12.5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); }
+
+/* Highlights */
+.highlights h2 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; margin: 0 0 18px; }
+.hl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px 28px; }
+.hl-grid div { display: grid; gap: 6px; align-content: start; border-top: 1px solid var(--line); padding-top: 14px; }
+.hl-grid h3 { margin: 0; font-size: 1.02rem; }
+.hl-grid p { margin: 0; color: #b9c4da; font-size: 14.5px; }
+footer { color: var(--muted); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .intro { grid-template-columns: 1fr; }
+  .facts { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; }
+  .frame { grid-template-columns: 1fr; min-height: 0; }
+  .side { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; border-right: 0; border-bottom: 1px solid #1f2a5c; padding: 12px; }
+  .nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  .nav button { width: auto; padding: 8px 10px; }
+  .nav button[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--route); }
+  .side-foot { margin-top: 0; margin-left: auto; }
+  .side-foot .label { display: none; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .goal-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .totals { grid-template-columns: 1fr; }
+  .side-brand span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-vals strong { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="intro">
+    <div>
+      <div class="brand">
+        <svg viewBox="56 56 400 400" aria-hidden="true">
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f2a44"/><stop offset="1" stop-color="#1fa2a6"/></linearGradient></defs>
+          <rect x="56" y="56" width="400" height="400" rx="80" fill="url(#lg)"/>
+          <circle cx="256" cy="240" r="90" stroke="#4cc3ff" stroke-width="18" fill="none"/>
+          <circle cx="256" cy="240" r="25" fill="#ffffff"/>
+          <line x1="256" y1="240" x2="256" y2="150" stroke="#ffffff" stroke-width="10"/>
+          <line x1="256" y1="240" x2="190" y2="300" stroke="#ffffff" stroke-width="10"/>
+          <line x1="256" y1="240" x2="322" y2="300" stroke="#ffffff" stroke-width="10"/>
+          <circle cx="180" cy="330" r="35" fill="#4CAF50"/>
+          <rect x="300" y="300" width="60" height="80" rx="10" fill="#ffffff"/>
+        </svg>
+        <span class="label">Projeto pessoal · web app em produção</span>
+      </div>
+      <h1>NT <span>Driver</span></h1>
+      <p class="pitch">Controle financeiro para motoristas de aplicativo. O motorista registra o que ganhou na Uber, 99 e InDriver, lança as despesas do carro e acompanha uma meta mensal que vira uma meta para cada dia de trabalho.</p>
+    </div>
+    <div class="facts">
+      <div><span class="label">Frontend</span><div class="stack"><span class="chip">React 18</span><span class="chip">React Router</span><span class="chip">Vite</span></div></div>
+      <div><span class="label">Backend</span><div class="stack"><span class="chip">Node.js</span><span class="chip">Express</span><span class="chip">PostgreSQL</span><span class="chip">SQLite (local)</span></div></div>
+      <div><span class="label">Infra</span><div class="stack"><span class="chip">Render</span><span class="chip">Supabase</span><span class="chip">Resend</span></div></div>
+    </div>
+  </header>
+
+  <section aria-label="Demonstração interativa">
+    <div class="frame">
+      <aside class="side">
+        <div class="side-brand">
+          <svg viewBox="56 56 400 400" aria-hidden="true"><rect x="56" y="56" width="400" height="400" rx="80" fill="url(#lg)"/><circle cx="256" cy="240" r="90" stroke="#4cc3ff" stroke-width="22" fill="none"/><circle cx="256" cy="240" r="28" fill="#fff"/></svg>
+          <span>NT Driver</span>
+        </div>
+        <nav class="nav" id="nav">
+          <button type="button" data-view="dashboard" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+          <button type="button" data-view="register"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Registrar</button>
+          <button type="button" data-view="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Metas</button>
+          <button type="button" data-view="bills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Contas</button>
+        </nav>
+        <div class="side-foot">
+          <span class="label">Demo sem servidor</span>
+          <button class="reset" id="reset" type="button">Restaurar exemplo</button>
+        </div>
+      </aside>
+      <div class="main" id="main"></div>
+    </div>
+  </section>
+
+  <section class="highlights">
+    <h2>O que tem por trás</h2>
+    <div class="hl-grid">
+      <div><h3>Meta diária que se ajusta sozinha</h3><p>A meta do mês é dividida pelos dias que ainda faltam. Quando o motorista ganha mais ou menos que o previsto, ou marca uma folga, os dias em aberto são recalculados e os dias já preenchidos mantêm a meta que tinham.</p></div>
+      <div><h3>Contas com parcelas e vencimento</h3><p>Despesas pessoais fixas ou parceladas (ex.: 13/48) aparecem no mês certo, com status pago ou pendente por mês e aviso no dashboard do que vence nos próximos 7 dias.</p></div>
+      <div><h3>Conta segura</h3><p>Cadastro com confirmação por e-mail, senha forte com bcrypt, sessão salva no PostgreSQL, limite de tentativas no login e cabeçalhos de segurança com Helmet.</p></div>
+      <div><h3>Assinatura e deploy</h3><p>Acesso liberado por assinatura com pagamento via Pix (QR Code gerado no servidor). Cada push na branch main publica uma nova versão no Render.</p></div>
+    </div>
+  </section>
+
+  <footer>Os valores desta página são exemplos. A demo roda inteira no navegador e reproduz a lógica de cálculo do app real.</footer>
+</div>
+
+<script>
+(function () {
+  var MONTH_LABEL = "Outubro de 2026";
+  var YEAR = 2026, MONTH_INDEX = 9, DAYS = 31, TODAY = 13;
+
+  var INITIAL = {
+    goal: 9000,
+    dayData: { 4: { dayOff: true }, 11: { dayOff: true } },
+    records: [
+      { day: 1, source: "Uber", income: 236.4, km: 168, hours: 9, expenseType: "Combustível", expense: 92 },
+      { day: 1, source: "99", income: 128.1 },
+      { day: 2, source: "Uber", income: 301.75, km: 151, hours: 8.5, expenseType: "Alimentação na rua", expense: 28 },
+      { day: 3, source: "Uber", income: 198.3, km: 176, hours: 10, expenseType: "Combustível", expense: 105 },
+      { day: 3, source: "InDriver", income: 142 },
+      { day: 5, source: "99", income: 264.9, km: 133, hours: 7.5, expenseType: "Combustível", expense: 70 },
+      { day: 6, source: "Uber", income: 352.2, km: 170, hours: 9, expenseType: "Troca de óleo", expense: 189 },
+      { day: 7, source: "Uber", income: 220, km: 158, hours: 9, expenseType: "Combustível", expense: 88 },
+      { day: 7, source: "99", income: 95.6 },
+      { day: 8, source: "Uber", income: 287.45, km: 149, hours: 8, expenseType: "Alimentação na rua", expense: 31 },
+      { day: 8, source: "Outros", income: 60 },
+      { day: 9, source: "Uber", income: 401.8, km: 194, hours: 10.5, expenseType: "Combustível", expense: 112 },
+      { day: 10, source: "InDriver", income: 188.2, km: 150, hours: 8, expenseType: "Lavagem", expense: 35 },
+      { day: 10, source: "99", income: 121.35 },
+      { day: 12, source: "Uber", income: 318.9, km: 160, hours: 8.5, expenseType: "Combustível", expense: 94 }
+    ],
+    bills: [
+      { id: "b1", name: "Seguro do carro", amount: 289, due: 10, paid: true, kind: "Fixa" },
+      { id: "b2", name: "Plano do celular", amount: 59.9, due: 14, paid: false, kind: "Fixa" },
+      { id: "b3", name: "Aluguel", amount: 1100, due: 15, paid: false, kind: "Fixa" },
+      { id: "b4", name: "Internet", amount: 99.9, due: 18, paid: false, kind: "Fixa" },
+      { id: "b5", name: "Financiamento do carro", amount: 1480, due: 20, paid: false, kind: "Parcela 13/48" }
+    ]
+  };
+
+  var state, view = "dashboard", lastSuggested = {}, registerMsg = null;
+  function reset() { state = JSON.parse(JSON.stringify(INITIAL)); lastSuggested = {}; registerMsg = null; }
+  reset();
+
+  var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  function money(v) { return brl.format(Number(v) || 0); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function weekday(d) { return new Date(YEAR, MONTH_INDEX, d).toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  // Mesmo cálculo da página Metas do app (nt/Pages.jsx).
+  function computeRows() {
+    var incomeByDay = {};
+    state.records.forEach(function (r) { incomeByDay[r.day] = (incomeByDay[r.day] || 0) + r.income; });
+    var rows = [];
+    for (var d = 1; d <= DAYS; d++) {
+      var data = state.dayData[d] || {};
+      rows.push({ day: d, goal: data.goal === undefined ? "" : data.goal, dayOff: !!data.dayOff, done: incomeByDay[d] || 0 });
+    }
+    var isClosed = function (r) { return r.dayOff || r.done > 0; };
+    var hasManual = function (r) { return r.goal !== "" && r.goal !== null && r.goal !== undefined; };
+    var splitRemaining = function (remaining, candidates) {
+      var manualSum = candidates.filter(hasManual).reduce(function (s, c) { return s + Number(c.goal); }, 0);
+      var autoCount = candidates.filter(function (c) { return !hasManual(c); }).length;
+      return autoCount > 0 ? Math.max(0, (remaining - manualSum) / autoCount) : 0;
+    };
+    var remaining = Math.max(0, state.goal), openDayGoal = null;
+    rows.forEach(function (row, i) {
+      if (row.dayOff) { row.suggested = 0; row.isClosed = true; row.isManual = false; return; }
+      var closed = isClosed(row), g;
+      if (hasManual(row)) g = Number(row.goal);
+      else if (closed) g = splitRemaining(remaining, rows.slice(i).filter(function (c) { return !c.dayOff; }));
+      else {
+        if (openDayGoal === null) openDayGoal = splitRemaining(remaining, rows.filter(function (c) { return !isClosed(c); }));
+        g = openDayGoal;
+      }
+      row.suggested = g; row.isClosed = closed; row.isManual = hasManual(row);
+      if (closed) remaining = Math.max(0, remaining - row.done);
+    });
+    rows.openDayGoal = openDayGoal || 0;
+    return rows;
+  }
+
+  function toggleDayOff(day) {
+    var rows = computeRows();
+    // Dias já preenchidos guardam a meta atual antes da mudança.
+    rows.forEach(function (r) {
+      if (r.day !== day && r.isClosed && !r.dayOff && !r.isManual) {
+        state.dayData[r.day] = { goal: Math.round(r.suggested * 100) / 100, dayOff: false };
+      }
+    });
+    var cur = state.dayData[day] || {};
+    var next = { dayOff: !cur.dayOff };
+    if (cur.goal !== undefined) next.goal = cur.goal;
+    if (!next.dayOff && next.goal === undefined) delete state.dayData[day];
+    else state.dayData[day] = next;
+  }
+
+  function resetDayGoal(day) {
+    var cur = state.dayData[day] || {};
+    if (cur.dayOff) state.dayData[day] = { dayOff: true };
+    else delete state.dayData[day];
+  }
+
+  function summarize() {
+    var s = { income: 0, expense: 0, km: 0, hours: 0, bySource: { Uber: 0, "99": 0, InDriver: 0, Outros: 0 }, byExpense: {}, days: {} };
+    state.records.forEach(function (r) {
+      s.income += r.income; s.bySource[r.source] = (s.bySource[r.source] || 0) + r.income;
+      s.km += r.km || 0; s.hours += r.hours || 0; s.days[r.day] = true;
+      if (r.expense) { s.expense += r.expense; s.byExpense[r.expenseType] = (s.byExpense[r.expenseType] || 0) + r.expense; }
+    });
+    s.daysWorked = Object.keys(s.days).length;
+    s.profit = s.income - s.expense;
+    return s;
+  }
+
+  function topbar(title, extra) {
+    return '<div class="topbar"><h2>' + title + '</h2><div class="topbar-meta">' + (extra || "") +
+      '<span class="pill">' + MONTH_LABEL + '</span><span class="pill sample">Dados de exemplo</span></div></div>';
+  }
+
+  function renderDashboard() {
+    var s = summarize(), rows = computeRows();
+    var pct = state.goal > 0 ? Math.min(100, Math.round(s.income / state.goal * 100)) : 0;
+
+    var pending = state.bills.filter(function (b) { return !b.paid && b.due - TODAY >= -7 && b.due - TODAY <= 7; })
+      .sort(function (a, b) { return a.due - b.due; }).slice(0, 3);
+    var weekTotal = state.bills.filter(function (b) { return b.due >= 8 && b.due <= 14; }).reduce(function (t, b) { return t + b.amount; }, 0);
+    var dueLabel = function (diff, d) { return diff < 0 ? "atrasada desde " + pad(d) + "/10" : diff === 0 ? "vence hoje" : diff === 1 ? "vence amanhã" : "vence em " + diff + " dias"; };
+
+    var minis = [
+      ["Uber", money(s.bySource.Uber)], ["99", money(s.bySource["99"])], ["InDriver", money(s.bySource.InDriver)], ["Outros", money(s.bySource.Outros)],
+      ["Km rodados", s.km.toFixed(1).replace(".", ",") + " km"], ["Horas", s.hours.toFixed(1).replace(".", ",") + " h"],
+      ["Receita por dia", money(s.daysWorked ? s.income / s.daysWorked : 0)], ["Lucro por hora", money(s.hours ? s.profit / s.hours : 0)]
+    ].map(function (m) { return '<div class="mini"><span>' + m[0] + '</span><strong class="num">' + m[1] + '</strong></div>'; });
+    Object.keys(s.byExpense).sort(function (a, b) { return s.byExpense[b] - s.byExpense[a]; }).forEach(function (k) {
+      minis.push('<div class="mini neg"><span>' + esc(k) + '</span><strong class="num">' + money(s.byExpense[k]) + '</strong></div>');
+    });
+
+    return topbar("Dashboard") +
+      '<div class="reminder"><div class="reminder-icon">!</div><div><strong>Lembrete de vencimento</strong>' +
+      '<p>Semana 08/10 a 14/10: <strong class="num">' + money(weekTotal) + '</strong> em contas da semana</p>' +
+      (pending.length ? '<ul>' + pending.map(function (b) { return '<li>' + esc(b.name) + ' <strong>' + dueLabel(b.due - TODAY, b.due) + ' · ' + money(b.amount) + '</strong></li>'; }).join("") + '</ul>' : '<p>Nenhuma conta pendente vence nos próximos 7 dias.</p>') +
+      '</div></div>' +
+      '<div class="totals"><div class="total in"><span>Receitas</span><strong class="num">' + money(s.income) + '</strong></div>' +
+      '<div class="total out"><span>Despesas</span><strong class="num">' + money(s.expense) + '</strong></div>' +
+      '<div class="total bal"><span>Saldo do mês</span><strong class="num">' + money(s.profit) + '</strong></div></div>' +
+      '<div class="dash-grid"><div class="card"><h3>Meta mensal</h3><div class="goal-box">' +
+      '<div class="donut" role="img" aria-label="Meta ' + pct + '% concluída" style="background:conic-gradient(var(--blue) 0 ' + pct + '%, var(--panel-2) ' + pct + '% 100%)"><div><strong class="num">' + pct + '%</strong><small>concluído</small></div></div>' +
+      '<div class="kv"><div><span>Meta</span><strong class="num">' + money(state.goal) + '</strong></div><div><span>Resultado</span><strong class="num">' + money(s.income) + '</strong></div>' +
+      '<div><span>Restante</span><strong class="num">' + money(Math.max(0, state.goal - s.income)) + '</strong></div><div><span>Dias trabalhados</span><strong class="num">' + s.daysWorked + '</strong></div></div>' +
+      '</div></div><div class="card"><h3>Resumo do mês</h3><div class="minis">' + minis.join("") + '</div></div></div>' +
+      '<div class="card"><h3>Ganho por dia × meta do dia</h3><div class="chart-wrap">' + chart(rows) + '</div>' +
+      '<div class="legend"><span><i style="background:var(--green)"></i>Bateu a meta</span><span><i style="background:var(--red)"></i>Abaixo da meta</span><span><i style="background:var(--route);height:3px;vertical-align:3px"></i>Meta do dia</span><span><i style="background:var(--amber)"></i>Folga</span></div></div>';
+  }
+
+  function chart(rows) {
+    var W = 760, H = 240, L = 54, R = 10, T = 12, B = 30;
+    var maxV = 0;
+    rows.forEach(function (r) { maxV = Math.max(maxV, r.done, r.suggested); });
+    var top = Math.max(100, Math.ceil(maxV / 100) * 100);
+    var step = top <= 400 ? 100 : 200;
+    if (top % step) top = Math.ceil(top / step) * step;
+    var y = function (v) { return T + (H - T - B) * (1 - v / top); };
+    var slot = (W - L - R) / DAYS, bw = slot * 0.62;
+    var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Ganho de cada dia de outubro comparado à meta do dia">';
+    for (var v = 0; v <= top; v += step) {
+      out += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(148,170,210,0.13)"/>' +
+        '<text x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="11" fill="#94a3bf" font-family="IBM Plex Mono, monospace">' + v + '</text>';
+    }
+    rows.forEach(function (r) {
+      var cx = L + slot * (r.day - 1) + slot / 2;
+      if (r.dayOff) {
+        out += '<rect x="' + (cx - bw / 2) + '" y="' + (y(0) - 4) + '" width="' + bw + '" height="4" rx="1" fill="#f5a524"/>';
+      } else if (r.done > 0) {
+        var hit = r.done >= r.suggested;
+        out += '<rect x="' + (cx - bw / 2) + '" y="' + y(r.done) + '" width="' + bw + '" height="' + (y(0) - y(r.done)) + '" rx="2" fill="' + (hit ? "#22c55e" : "#ef4444") + '"><title>' + pad(r.day) + '/10: ' + money(r.done) + ' (meta ' + money(r.suggested) + ')</title></rect>';
+      }
+      if (!r.dayOff && r.suggested > 0) {
+        out += '<line x1="' + (cx - slot / 2 + 1) + '" x2="' + (cx + slot / 2 - 1) + '" y1="' + y(r.suggested) + '" y2="' + y(r.suggested) + '" stroke="#4cc3ff" stroke-width="2"/>';
+      }
+      if (r.day === 1 || r.day % 5 === 0 || r.day === TODAY) {
+        out += '<text x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="' + (r.day === TODAY ? "#4cc3ff" : "#94a3bf") + '" font-family="IBM Plex Mono, monospace">' + pad(r.day) + '</text>';
+      }
+    });
+    return out + '</svg>';
+  }
+
+  function renderGoals() {
+    var rows = computeRows();
+    var done = rows.reduce(function (t, r) { return t + r.done; }, 0);
+    var openDays = rows.filter(function (r) { return !r.isClosed; }).length;
+    var cards = rows.map(function (r) {
+      var cls = r.dayOff ? "off" : r.done > 0 ? (r.suggested > 0 && r.done >= r.suggested ? "hit" : "miss") : "open";
+      var status = r.dayOff ? "Folga" : r.done > 0 ? (cls === "hit" ? "Meta batida" : "Meta não batida") : "Não preenchido";
+      var flash = lastSuggested[r.day] !== undefined && Math.abs(lastSuggested[r.day] - r.suggested) > 0.005 ? " flash" : "";
+      return '<div class="day ' + cls + (r.day === TODAY ? " today" : "") + '">' +
+        '<div class="day-head"><div><b class="num">' + pad(r.day) + '</b><small>' + weekday(r.day) + '</small></div><span class="status">' + status + '</span></div>' +
+        '<div class="day-vals"><div><span>' + (r.isManual && !r.dayOff ? "Meta (fixa)" : "Meta do dia") + '</span><strong class="num' + flash + '">' + (r.dayOff ? "Folga" : money(r.suggested)) + '</strong></div>' +
+        '<div><span>Fiz</span><strong class="num">' + money(r.done) + '</strong></div></div>' +
+        '<div class="day-actions">' +
+        (r.isManual && !r.dayOff ? '<button type="button" data-auto="' + r.day + '">Voltar ao automático</button>' : "") +
+        '<button type="button" data-off="' + r.day + '" class="' + (r.dayOff ? "on" : "") + '">' + (r.dayOff ? "Remover folga" : "Marcar folga") + '</button>' +
+        '</div></div>';
+    }).join("");
+    lastSuggested = {};
+    rows.forEach(function (r) { lastSuggested[r.day] = r.suggested; });
+
+    return topbar("Metas",
+      '<form class="monthly-form" id="monthly"><label for="goalInput" class="label">Meta mensal</label><input class="field num" id="goalInput" type="number" min="1" step="50" value="' + state.goal + '"><button class="btn" type="submit">Salvar</button></form>') +
+      '<div class="explain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>' +
+      '<p>Experimente: marque uma folga em qualquer dia em aberto. A meta que falta é redistribuída só entre os dias ainda não preenchidos, e os valores alterados piscam. Os dias que já têm ganho lançado mantêm a meta que tinham.</p></div>' +
+      '<div class="goal-strip"><div><span class="label">Meta do mês</span><strong class="num">' + money(state.goal) + '</strong></div>' +
+      '<div><span class="label">Já fiz</span><strong class="num">' + money(done) + '</strong></div>' +
+      '<div><span class="label">Falta</span><strong class="num">' + money(Math.max(0, state.goal - done)) + '</strong></div>' +
+      '<div class="hl"><span class="label">Meta por dia · ' + openDays + ' dias</span><strong class="num">' + money(rows.openDayGoal) + '</strong></div></div>' +
+      '<div class="days">' + cards + '</div>';
+  }
+
+  function renderRegister() {
+    var opts = function (list, sel) { return list.map(function (o) { return '<option' + (o === sel ? " selected" : "") + '>' + o + '</option>'; }).join(""); };
+    var recent = state.records.slice().sort(function (a, b) { return b.day - a.day; }).slice(0, 6);
+    return topbar("Registrar") +
+      '<form class="card" id="regForm" novalidate><h3>Novo registro do dia</h3><div class="form-grid">' +
+      '<label for="fDate">Data<input class="field" id="fDate" type="date" min="2026-10-01" max="2026-10-31" value="2026-10-13"></label>' +
+      '<label for="fSource">Plataforma<select class="field" id="fSource">' + opts(["Uber", "99", "InDriver", "Outros"], "Uber") + '</select></label>' +
+      '<label for="fIncome">Ganho (R$)<input class="field num" id="fIncome" type="number" min="0" step="0.01" value="365.40"></label>' +
+      '<label for="fKm">Km rodados<input class="field num" id="fKm" type="number" min="0" step="0.1" value="172"></label>' +
+      '<label for="fHours">Horas trabalhadas<input class="field num" id="fHours" type="number" min="0" step="0.5" value="9"></label>' +
+      '<label for="fExpType">Tipo de despesa<select class="field" id="fExpType">' + opts(["Combustível", "Alimentação na rua", "Troca de óleo", "Lavagem", "Outros"], "Combustível") + '</select></label>' +
+      '<label for="fExp">Valor da despesa (R$)<input class="field num" id="fExp" type="number" min="0" step="0.01" value="96"></label>' +
+      '</div><div class="form-actions"><button class="btn" type="submit">Salvar registro</button>' +
+      (registerMsg ? '<span class="msg ' + registerMsg.kind + '" role="status">' + registerMsg.text + '</span>' : "") +
+      '</div></form>' +
+      '<div class="card"><h3>Últimos registros</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Plataforma</th><th class="r">Ganho</th><th class="r">Km</th><th>Despesa</th><th class="r">Valor</th></tr></thead><tbody>' +
+      recent.map(function (r) {
+        return '<tr><td class="num">' + pad(r.day) + '/10</td><td>' + esc(r.source) + '</td><td class="r num">' + money(r.income) + '</td><td class="r num">' + (r.km ? r.km : "-") + '</td><td>' + (r.expense ? esc(r.expenseType) : "-") + '</td><td class="r num">' + (r.expense ? money(r.expense) : "-") + '</td></tr>';
+      }).join("") + '</tbody></table></div></div>';
+  }
+
+  function renderBills() {
+    var pendingTotal = state.bills.filter(function (b) { return !b.paid; }).reduce(function (t, b) { return t + b.amount; }, 0);
+    return topbar("Contas do mês", '<span class="pill">A pagar: <strong class="num">' + money(pendingTotal) + '</strong></span>') +
+      '<div class="card"><div class="table-wrap"><table><thead><tr><th>Conta</th><th>Tipo</th><th>Vencimento</th><th class="r">Valor</th><th>Status</th><th></th></tr></thead><tbody>' +
+      state.bills.map(function (b) {
+        return '<tr><td>' + esc(b.name) + '</td><td>' + esc(b.kind) + '</td><td class="num">' + pad(b.due) + '/10</td><td class="r num">' + money(b.amount) + '</td>' +
+          '<td><span class="tag ' + (b.paid ? "paid" : "due") + '">' + (b.paid ? "Pago" : "Pendente") + '</span></td>' +
+          '<td><button type="button" data-bill="' + b.id + '">' + (b.paid ? "Marcar pendente" : "Marcar como pago") + '</button></td></tr>';
+      }).join("") + '</tbody></table></div></div>';
+  }
+
+  var main = document.getElementById("main");
+  function render() {
+    main.innerHTML = view === "dashboard" ? renderDashboard() : view === "goals" ? renderGoals() : view === "register" ? renderRegister() : renderBills();
+    document.querySelectorAll("#nav button").forEach(function (b) {
+      if (b.dataset.view === view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    var flashing = main.querySelectorAll(".flash");
+    if (flashing.length) setTimeout(function () { flashing.forEach(function (el) { el.classList.remove("flash"); }); }, 60);
+  }
+
+  document.getElementById("nav").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-view]");
+    if (!b) return;
+    if (view !== b.dataset.view) { lastSuggested = {}; registerMsg = null; }
+    view = b.dataset.view; render();
+  });
+  document.getElementById("reset").addEventListener("click", function () { reset(); render(); });
+
+  main.addEventListener("click", function (e) {
+    var off = e.target.closest("[data-off]"), auto = e.target.closest("[data-auto]"), bill = e.target.closest("[data-bill]");
+    if (off) { toggleDayOff(Number(off.dataset.off)); render(); }
+    else if (auto) { resetDayGoal(Number(auto.dataset.auto)); render(); }
+    else if (bill) { state.bills.forEach(function (b) { if (b.id === bill.dataset.bill) b.paid = !b.paid; }); render(); }
+  });
+
+  main.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (e.target.id === "monthly") {
+      var g = Number(document.getElementById("goalInput").value);
+      if (g > 0) { state.goal = g; render(); }
+      return;
+    }
+    if (e.target.id === "regForm") {
+      var date = document.getElementById("fDate").value;
+      var income = Number(document.getElementById("fIncome").value);
+      var expense = Number(document.getElementById("fExp").value) || 0;
+      if (!/^2026-10-\d{2}$/.test(date)) { registerMsg = { kind: "err", text: "Escolha uma data de outubro de 2026." }; render(); return; }
+      if (!(income >= 0)) { registerMsg = { kind: "err", text: "Informe um ganho igual ou maior que zero." }; render(); return; }
+      var day = Number(date.slice(8, 10));
+      if (state.dayData[day] && state.dayData[day].dayOff) { registerMsg = { kind: "err", text: "O dia " + pad(day) + "/10 está marcado como folga. Remova a folga em Metas para registrar." }; render(); return; }
+      state.records.push({
+        day: day, source: document.getElementById("fSource").value, income: income,
+        km: Number(document.getElementById("fKm").value) || 0, hours: Number(document.getElementById("fHours").value) || 0,
+        expenseType: document.getElementById("fExpType").value, expense: expense
+      });
+      registerMsg = { kind: "ok", text: "Registro de " + pad(day) + "/10 salvo. Veja a meta dos próximos dias em Metas." };
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
